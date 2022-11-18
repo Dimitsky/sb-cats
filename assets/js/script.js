@@ -11,5 +11,6 @@ const modal = new Modal();
 const app = new App(api, render, modal);
 
 api.getAllCats()
-    .then(arr => render.showAllCats(arr, $catsNode))
-    .catch(error => alert('[api.getAllCats()] ' + error))
+    .then(
+        arr => render.showAllCats(arr, $catsNode), 
+        error => alert(error))
