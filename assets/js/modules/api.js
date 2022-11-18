@@ -1,6 +1,6 @@
 export default class API {
     constructor(host) {
-        this.host = `http://sb-cats.herokuapp.com/api/2/${host}/`;
+        this.host = `https://sb-cats.herokuapp.com/api/2/${host}/`;
         this.cache = null;
     }
 
