@@ -23,7 +23,7 @@ export default class Modal {
 
         pattern = titleHTML ? pattern.replace('<!-- title -->', titleHTML) : pattern.replace('<!-- title -->', 'Modal title');
         pattern = bodyHTML ? pattern.replace('<!-- body -->', bodyHTML) : pattern.replace('<!-- body -->', '');
-        pattern = footerHTML ? pattern.replace('<!-- footer -->', footerHTML) : pattern.replace('<!-- footer -->', '<button type="button" class="btn btn-secondary" data-action="closeModal">Close</button>');
+        pattern = footerHTML ? pattern.replace('<!-- footer -->', footerHTML) : pattern.replace('<!-- footer -->', '');
         
         this.parentNode.insertAdjacentHTML('beforeend', pattern);
         document.querySelector('body').style.cssText = `overflow: hidden; padding-right: ${scrollWidth}px`;

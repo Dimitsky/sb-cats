@@ -5,6 +5,7 @@
 */
 
 import Validator from './validator.js';
+import Form from './form.js';
 
 export default class Events {
     constructor(api, render, modal) {
@@ -30,23 +31,40 @@ export default class Events {
         this.modal.show(
             'Add a new cat', 
             null, 
-            `
-                <button type="button" class="btn btn-danger" data-action="clear">Clear form</button>
-                <button type="button" class="btn btn-primary" data-action="fill">Fill form</button>
-                <button type="button" class="btn btn-primary" data-form="submit" data-action="submit">Submit</button>`
+            null
         );
-        this.render.showForm(document.querySelector('[data-modal-body]'));
-        this.validator = new Validator(document.querySelector('form'));
+
+        this.addForm = new Form('add_cat', 'POST', document.querySelector('[data-modal-body]'));
+        this.validator = new Validator(this.addForm.form);
+        this.addForm.addEvent('click', event => {
+            event.preventDefault();
+
+            if (!this.validator.check()) return; 
+
+            this.api.addCat(this.addForm.form)
+                .then(data => {
+                    localStorage.removeItem(this.addForm.name);
+                    this.addForm.clear();
+                    this.closeModal();
+                    this.render.showCat(data, document.querySelector('[data-cats-node]'));
+                })
+                .catch(error => alert(error));
+        }, 'submit');
     }
 
     info(target) {
-        let catData = this.getLocalCatData(target.closest('[data-cat-id]'));
+        this.api.getAllCats()
+            .then(dataArr => {
+                let id = target.closest('[data-cat-id]').dataset.catId;
+                let data = dataArr.find(data => data.id == id);
 
-        this.modal.show(
-            'Cat info', 
-            null, 
-            '<button type="button" class="btn btn-primary" data-action="edit">Edit</button>');
-        this.render.showInfoCat(catData, document.querySelector('[data-modal-body]'));
+                this.modal.show(
+                    'Cat info', 
+                    null, 
+                    '<button type="button" class="btn btn-primary" data-action="edit">Edit</button>');
+                this.render.showInfoCat(data, document.querySelector('[data-modal-body]'));
+            })
+            .catch(error => alert(error))
     }
 
     delete(target) {
@@ -67,28 +85,57 @@ export default class Events {
     }
 
     edit(target) {
-        this.modal.close();
-        this.modal.show(
-            'Edit the cat', 
-            null, 
-            '<button type="button" class="btn btn-primary" data-form="submit" data-action="submit">Submit</button>'
-        );
-        this.render.showForm(document.querySelector('[data-modal-body]'));
+        // Защищает от повторного нажатия (например, при медленной сети)
+        target.setAttribute('disabled', '');
         
-        let catData = this.getLocalCatData(target.closest('[data-modal]').querySelector('[data-cat-id]'));
-        let $form = document.forms[0];
+        this.api.getAllCats()
+            .then(dataArr => {
+                    let id = target.closest('[data-modal]').querySelector('[data-cat-id]').dataset.catId;
+                    let data = dataArr.find(data => data.id == id);
+                    
+                    this.modal.close();
+                    this.modal.show(
+                        'Edit the cat', 
+                        null, 
+                        null
+                        // '<button type="button" class="btn btn-primary" data-action="submit" form="edit_cat">Submit</button>'
+                    );
 
-        $form.method = 'PUT';
-        this.validator = new Validator($form);
-        $form.elements.id.value = catData.id;
-        $form.elements.id.setAttribute('disabled', '');
-        $form.elements.name.value = catData.name;
-        $form.elements.name.setAttribute('disabled', '');
-        $form.elements.age.value = catData.age;
-        $form.elements.rate.value = catData.rate;
-        $form.elements.description.value = catData.description;
-        $form.elements.favourite.checked = catData.favourite;
-        $form.elements.img_link.value = catData.img_link;
+                    this.editForm = new Form('edit_cat', 'PUT', document.querySelector('[data-modal-body]'));
+                    this.validator = new Validator(this.editForm.form);
+
+                    this.editForm.elements.id.value = data.id;
+                    this.editForm.elements.id.setAttribute('disabled', '');
+                    this.editForm.elements.age.value = data.age;
+                    this.editForm.elements.name.value = data.name;
+                    this.editForm.elements.name.setAttribute('disabled', '');
+                    this.editForm.elements.rate.value = data.rate;
+                    this.editForm.elements.description.innerText = data.description;
+                    this.editForm.elements.favourite.checked = data.favourite;
+                    this.editForm.elements.img_link.value = data.img_link;
+                    
+                    this.editForm.addEvent('click', event => {
+                        event.preventDefault();
+            
+                        if (!this.validator.check()) return; 
+            
+                        this.api.editCat(this.editForm)
+                            .then(data => {           
+                                this.validator.remove();
+                                this.editForm.clear();
+                                this.closeModal();
+
+                                let $catImg = document.querySelector(`[data-cat-id="${data.id}"] [data-cat-img]`);
+                                let $catDescription = document.querySelector(`[data-cat-id="${data.id}"] [data-cat-description]`);
+
+                                $catImg.src = data.img_link;
+                                $catImg.alt = data.description;
+                                $catDescription.innerText = data.description;
+                            })
+                            .catch(error => alert(error));
+                    }, 'submit');
+                })
+            .catch(error => alert(error))
     }
 
     fill(target) {
@@ -124,51 +171,10 @@ export default class Events {
         this.modal.close();
     }
 
-    submit(target) {
-        if (!this.validator.check()) return;
-
-        const $form = document.forms[0];
-        const method = $form.getAttribute('method').toUpperCase();
-        const id = $form.elements.id;
-
-        if (method === 'POST') {
-            this.api.addCat($form)
-                .then(data => {
-                    this.validator.remove();
-                    this.closeModal();
-                    this.render.showCat(data, document.querySelector('[data-cats-node]'));
-                })
-                .catch(error => alert(error));
-        } else if (method === 'PUT') {
-            this.api.editCat($form)
-                .then(data => {
-                    this.validator.remove();
-                    this.closeModal();
-                    
-                    let $cat = document.querySelector(`[data-cat-id="${data.id}"]`);
-                    let $catImg = $cat.querySelector('[data-card-img]');
-                    let $catName = $cat.querySelector('[data-card-name]');
-                    let $catDescription = $cat.querySelector('[data-card-description]');
-
-                    $catImg.src = data.img_link;
-                    $catImg.alt = data.description;
-                    $catName.name = data.name;
-                    $catDescription.innerText = data.description;
-
-                    $cat.dataset.catAge = data.age;
-                    $cat.dataset.catRate = data.rate;
-                    $cat.dataset.catDescription = data.description;
-                    $cat.dataset.catFavourite = data.favourite;
-                    $cat.dataset.catImg_link = data.img_link;
-                })
-                .catch(error => alert(error));
-        }
-    }
-
     handler(event) {
         let action = event.target.dataset.action;
 
-        if (action) {
+        if (action && this[action]) {
             this[action](event.target);
         }
     }
