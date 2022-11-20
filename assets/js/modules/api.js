@@ -27,8 +27,10 @@ export default class API {
         // Переменная должна содержать число
         data.id = +data.id;
 
-        // Переменная должна содержать число
-        if (data.age) {
+        // Переменная должна содержать число. По умолчанию равно 1
+        if (!data.age) {
+            data.age = 1;
+        } else {
             data.age = +data.age;
         }
 
