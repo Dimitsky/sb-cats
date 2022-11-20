@@ -100,7 +100,7 @@ class App {
                 modal.close();
                 modal.insertContentHTML(rawForm);
                 modal.addListener('modal-open', e => {
-                    this.validator = new Validator(document)
+                    this.validator = new Validator(document.forms[this.formName]);
                     document.forms[this.formName].elements.id.setAttribute('disabled', '');
                     document.forms[this.formName].elements.name.setAttribute('disabled', '');
                 });
@@ -112,13 +112,16 @@ class App {
                 })
                 modal.addListener('modal-close-end', e => {
                     modal.addListener('click', e => {
+                        e.preventDefault();
                         e.target.setAttribute('disabled', '');
     
-                        if (!this.validator.check()) return;
+                        if (!this.validator.check()) {
+                            e.target.removeAttribute('disabled');
+                            return;
+                        };
     
                         api.editCat(document.forms[this.formName])
                             .then(data => {
-                                target.removeAttribute('disabled');
                                 modal.close();
                                 const $cat = document.querySelector(`[data-cat-id="${data.id}"]`);
                                 const $catImg = $cat.querySelector('[data-cat-img]');
