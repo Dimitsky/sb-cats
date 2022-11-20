@@ -1,3 +1,9 @@
+/*
+
+Валидация формы с помощью Constraint Validation API
+
+*/
+
 export default class Validator {
     constructor($form) {
         this.form = $form;
@@ -27,7 +33,7 @@ export default class Validator {
         return $input.closest('[data-form=container]').querySelector('[data-form=error]');
     }
 
-    remove() {
+    removeListeners() {
         this.inputs.forEach($input => $input.removeEventListener('input', this.inputHandler.bind(this)));
     }
 

@@ -1,3 +1,11 @@
+/*
+
+Данный класс получает, добавляет, изменяет, удаляет котиков на сервере.
+
+*/
+
+import { modal } from './modal.js';
+
 export default class API {
     constructor(host) {
         this.host = `https://sb-cats.herokuapp.com/api/2/${host}/`;
