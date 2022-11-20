@@ -115,7 +115,7 @@ class App {
                         e.preventDefault();
                         e.target.setAttribute('disabled', '');
     
-                        if (!this.validator.check()) {
+                        if (this.validator && !this.validator.check()) {
                             e.target.removeAttribute('disabled');
                             return;
                         };
